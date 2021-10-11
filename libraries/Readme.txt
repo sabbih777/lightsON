@@ -1,0 +1,1 @@
+SD is a modified library, not the original one that comes with Arduino IDE.
