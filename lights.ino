@@ -50,13 +50,13 @@ char file_name[]="logo.bmp";
 File bmp_file;
 
 
-int DOOR1BTN =22;
-int DOOR2BTN =24;
+int DOOR1BTN =51;
+int DOOR2BTN =53;
 
-int RELAY1 = 31;
-int RELAY2 = 33;
-int RELAY3 = 35;
-int RELAY4 = 37;
+int RELAY1 = 37;
+int RELAY2 = 39;
+int RELAY3 = 41;
+int RELAY4 = 43;
 
 
 bool allOnOffPressed = false;
@@ -67,9 +67,9 @@ bool door2BtnPressed= false;
 bool proyecting = false;
 
 bool sleeping= false;
-bool touched = false;
+bool touchedToAwake = false;
 
-long timeToSleep = 20000;
+long timeToSleep = 7000;
 unsigned long awakeTime = 0;
 
 void setup() 
@@ -87,6 +87,8 @@ void setup()
   pinMode(RELAY3,OUTPUT);
   pinMode(RELAY4,OUTPUT);
 
+
+  
   
    Serial.begin(9600);
    my_lcd.Init_LCD();
@@ -141,23 +143,27 @@ void setup()
 
 void loop() 
 {
+
+
+  
+do{
+
+  
+  
   if ((millis()- awakeTime) > timeToSleep && !sleeping )
   {
     sleeping= true;
     my_lcd.Fill_Screen(BLACK);
+    
     Serial.println("Going to Sleep");
   }
-
-  if(sleeping && touched == true)
-  {
-    awakeTime = millis();
-    sleeping= false;
-    //Serial.println("Touched");
-    drawMainInterface();
-    drawButtons();     
-  }
   
-do{
+  int touchedArea = readTouch();
+ 
+//  Serial.println(door1BtnPressed);
+//  Serial.println(door2BtnPressed);
+  
+  
   if(digitalRead(DOOR1BTN)==HIGH)
   {
     door1BtnPressed=true;
@@ -173,8 +179,8 @@ do{
     allOnOffPressed = false;
     proyectionPressed =false;
   }
-
-  if(readTouch()==1)
+if (!sleeping ){
+  if(touchedArea==1)
   {
     allOnOffPressed = true;
     proyectionPressed=false;
@@ -184,7 +190,7 @@ do{
     Serial.println("All lights");
   }
     
-  if(readTouch()==2)
+  if(touchedArea==2 )
   {
     allOnOffPressed = false;
     proyectionPressed =true;
@@ -193,6 +199,18 @@ do{
     proyecting =true;
     drawButtons();
    }
+
+}
+
+  if(sleeping && touchedToAwake == true)
+  {
+    awakeTime = millis();
+    sleeping= false;
+    touchedToAwake= false;
+    //Serial.println("Touched");
+    drawMainInterface();
+    drawButtons();     
+  }
   }while (door1BtnPressed == false && door2BtnPressed == false && allOnOffPressed == false && proyectionPressed == false );
    
  
@@ -227,25 +245,22 @@ do{
 
   //Debouncing
 //  do{
-//    readTouch();
-//    
 //    if(digitalRead(DOOR1BTN)==HIGH){
-//       door1BtnPressed=true;
-//       door2BtnPressed=false;
-//       allOnOffPressed = false;
-//       proyectionPressed =false;
+//     door1BtnPressed=true;
+//     door2BtnPressed=false;
+//     allOnOffPressed = false;
+//     proyectionPressed =false;
 //    }
 //
-//    if(digitalRead(DOOR2BTN)==HIGH)
+//  if(digitalRead(DOOR2BTN)==HIGH)
 //    {
 //       door2BtnPressed=true;
 //       door1BtnPressed=false;
 //       allOnOffPressed = false;
 //       proyectionPressed =false;
 //    }
-//    //Serial.println("Debouncing");
-// 
-//  }while (digitalRead(DOOR1BTN) == HIGH || digitalRead(DOOR2BTN) == HIGH || readTouch()==-1);
+//   Serial.println("Debouncing");
+//}while (digitalRead(DOOR1BTN) == HIGH || digitalRead(DOOR2BTN) == HIGH );
 
 
 
@@ -263,7 +278,7 @@ int readTouch ()
   if (p.z >= SENSABLEPRESSURE ) //pressure
   {
     Serial.println("Touched");
-    touched =true;
+    touchedToAwake =true;
     if ( p.y >=240 && p.y<= 800 )
      {
       if ( p.x >= 380 && p.x<= 540 ) // Encender / Apagar todas las lucs
@@ -305,7 +320,7 @@ int readTouch ()
      }
   }
   else {
-      touched =false;
+      touchedToAwake =false;
 //      //Serial.println("X:");  
 //      //Serial.println(p.x);  
 //      //Serial.println("Y:");  
