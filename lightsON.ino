@@ -59,24 +59,18 @@ int RELAY3 = 39;
 int RELAY4 = 41;
 
 
-bool allOnPressed = false;
-bool allOffPressed = false;
 
-bool proyectionPressed= false;
-bool door1BtnPressed= false;
-bool door2BtnPressed= false;
-
+short fromState= 1;
+short toState=1;
 
 int door1BtnState = LOW;
 int door2BtnState = LOW;
 
 
-bool proyecting = false;
-
 bool sleeping= false;
 bool touchedToAwake = false;
 
-long timeToSleep = 7000;
+long timeToSleep = 18000;
 unsigned long awakeTime = 0;
 
 short touchedArea = -1;
@@ -167,63 +161,66 @@ do{
 
 //  Serial.println(touchedArea);
 
+  
+  //Debouncing
+  do{
+    if(digitalRead(DOOR1BTN)==HIGH)
+    {
+       
+       door1BtnState = HIGH;
+       (fromState==1 ) ? toState=0 : toState=1;
+       
+    }
+    else
+    {
+      
+      door1BtnState =LOW;
+      
+    }
+    if(digitalRead(DOOR2BTN)==HIGH)
+    {
+      
+      door2BtnState = HIGH;
+      (fromState==1 ) ? toState=0 : toState=1;
+    }
+    else
+    {
+     
+      door2BtnState =LOW;
+    }
+  //  Serial.println("Debouncing");
+  }while (digitalRead(DOOR1BTN) == HIGH || digitalRead(DOOR2BTN) == HIGH );
+
+
+
 }while (door1BtnState == LOW && door2BtnState == LOW && touchedArea==-1);
 
  
 
 
-if (!sleeping ){
+if (!sleeping && !touchedToAwake )
+{
   if(touchedArea==1)
   {
-    allOnPressed = true;
-    allOffPressed = false;
-    proyectionPressed=false;
-    door1BtnPressed=false;
-    door2BtnPressed=false;
-    drawButtons();
+    toState= 1;
+
   }
   if(touchedArea==2)
   {
-    allOffPressed = true;
-    allOnPressed = false;
-    proyectionPressed=false;
-    door1BtnPressed=false;
-    door2BtnPressed=false;
-    drawButtons();
-    
+    toState= 0;
+        
   }
   
     
   if(touchedArea==3 )
   {
-    allOnPressed = false;
-    allOffPressed = false;
-    proyectionPressed =true;
-    door1BtnPressed=false;
-    door2BtnPressed=false;
-    proyecting =true;
-    drawButtons();
+
+    toState=2;
+   
    }
 
 }
 
- if(door1BtnState==HIGH)
-  {
-    door1BtnPressed=true;
-    door2BtnPressed=false;
-    allOnPressed = false;
-    allOffPressed = false;
-    proyectionPressed =false;
-  }
-
-  if(door2BtnState==HIGH)
-  {
-    door2BtnPressed=true;
-    door1BtnPressed=false;
-    allOnPressed = false;
-    allOffPressed = false;
-    proyectionPressed =false;
-  }
 
 
 if(sleeping && touchedToAwake)
@@ -236,88 +233,85 @@ if(sleeping && touchedToAwake)
    drawButtons();   
 }
 
-Serial.println("Btn1");
-Serial.println(door1BtnPressed);
 
 
-Serial.println("Btn2");
-Serial.println(door2BtnPressed);
-
- 
- if  (!sleeping && !touchedToAwake && (allOnPressed || allOffPressed || proyectionPressed) ) 
- {
-    if (allOnPressed)
-      {
-          digitalWrite(RELAY1, LOW); //Relay module is active low
-          digitalWrite(RELAY2, LOW);
-          digitalWrite(RELAY3, LOW);
-          digitalWrite(RELAY4, LOW);
-          proyecting=false;  
-       }
-        
-      if (allOffPressed)
-      {
-        digitalWrite(RELAY1, HIGH);
-        digitalWrite(RELAY2, HIGH);
-        digitalWrite(RELAY3, HIGH);
-        digitalWrite(RELAY4, HIGH);
-      }
-
-      if (proyectionPressed)
-       {
-        digitalWrite(RELAY1, LOW);
-        digitalWrite(RELAY2, LOW);
-        digitalWrite(RELAY3, LOW);
-        digitalWrite(RELAY4, HIGH);
-        
-      } 
+if ( (!sleeping && !touchedToAwake && toState!=fromState) || (door1BtnState || door2BtnState) )
+{
+  readState();
 }
-//
-//if (door1BtnPressed || door2BtnPressed)
-//{
-//  if(proyecting)
-//  {
-//     digitalWrite(RELAY1, LOW);
-//     digitalWrite(RELAY2, LOW);
-//     digitalWrite(RELAY3, LOW);
-//     digitalWrite(RELAY4, LOW);
-//     proyecting=false;  
-//  }
-//  else 
-//  {
-//     digitalWrite(RELAY1, !digitalRead(RELAY1));
-//     digitalWrite(RELAY2, !digitalRead(RELAY2));
-//     digitalWrite(RELAY3, !digitalRead(RELAY3));
-//     digitalWrite(RELAY4, !digitalRead(RELAY4));
-//  }
-//  
-//}
-  
+
+}
 
 
+void readState(){
+  if (fromState==0 && toState==1) //FROM Off TO ON
+  {
+    digitalWrite(RELAY1, LOW); //Relay module is active low
+    digitalWrite(RELAY2, LOW);
+    digitalWrite(RELAY3, LOW);
+    digitalWrite(RELAY4, LOW);
+
+    fromState=1;
+    
+  }
+
+  if (fromState==1 && toState==0) //FROM ON TO Off
+  {
+    digitalWrite(RELAY1, HIGH); //Relay module is active low
+    digitalWrite(RELAY2, HIGH);
+    digitalWrite(RELAY3, HIGH);
+    digitalWrite(RELAY4, HIGH);
+
+    fromState=0;
+    
+  }
+
+  if (fromState==0 && toState==2) //FROM Off TO Projection
+  {
+    digitalWrite(RELAY1, LOW); //Relay module is active low
+    digitalWrite(RELAY2, LOW);
+    digitalWrite(RELAY3, LOW);
+    digitalWrite(RELAY4, HIGH);
+
+    fromState=2;
+    
+  }
+
+  if (fromState==2 && toState==0) //FROM Projection to OFF
+  {
+    digitalWrite(RELAY1, HIGH); //Relay module is active low
+    digitalWrite(RELAY2, HIGH);
+    digitalWrite(RELAY3, HIGH);
+    digitalWrite(RELAY4, HIGH);
+
+    fromState=0;
+    
+  }
 
 
-  //Debouncing
-//  do{
-//    if(digitalRead(DOOR1BTN)==HIGH){
-//     door1BtnPressed=true;
-//     door2BtnPressed=false;
-//     allOnOffPressed = false;
-//     proyectionPressed =false;
-//    }
-//
-//  if(digitalRead(DOOR2BTN)==HIGH)
-//    {
-//       door2BtnPressed=true;
-//       door1BtnPressed=false;
-//       allOnOffPressed = false;
-//       proyectionPressed =false;
-//    }
-//   Serial.println("Debouncing");
-//}while (digitalRead(DOOR1BTN) == HIGH || digitalRead(DOOR2BTN) == HIGH );
+  if (fromState==1 && toState==2) //FROM ON TO Projection
+  {
+    digitalWrite(RELAY1, LOW); //Relay module is active low
+    digitalWrite(RELAY2, LOW);
+    digitalWrite(RELAY3, LOW);
+    digitalWrite(RELAY4, HIGH);
 
+    fromState=2;
+    
+  }
 
+  if (fromState==2 && toState==1) //FROM Projection to ON
+  {
+    digitalWrite(RELAY1, LOW); //Relay module is active low
+    digitalWrite(RELAY2, LOW);
+    digitalWrite(RELAY3, LOW);
+    digitalWrite(RELAY4, LOW);
 
+    fromState=1;
+    
+  }
+
+    drawButtons();
 }
 
 int readTouch ()
@@ -417,7 +411,7 @@ void drawOnButton () {
   uint16_t bgColor;
   uint16_t textColor;
 
-  if (allOnPressed == true)
+  if (fromState == 1)
   {
     bgColor = GREEN;
     textColor = BLACK;
@@ -444,7 +438,7 @@ void drawOffButton () {
   uint16_t bgColor;
   uint16_t textColor;
 
-  if (allOffPressed == true)
+  if (fromState == 0)
   {
     bgColor = GREEN;
     textColor = BLACK;
@@ -468,7 +462,7 @@ void drawOffButton () {
 void drawProyectionButton(){
    uint16_t bgColor;
    uint16_t textColor;
-   if (proyectionPressed == true)
+   if (fromState == 2)
   {
     bgColor = GREEN;
     textColor = BLACK;
