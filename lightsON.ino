@@ -169,6 +169,10 @@ do{
        
        door1BtnState = HIGH;
        (fromState==1 ) ? toState=0 : toState=1;
+       if (sleeping)
+       {
+         touchedToAwake =true;
+       }
        
     }
     else
@@ -182,6 +186,10 @@ do{
       
       door2BtnState = HIGH;
       (fromState==1 ) ? toState=0 : toState=1;
+      if (sleeping)
+       {
+         touchedToAwake =true;
+       }
     }
     else
     {
